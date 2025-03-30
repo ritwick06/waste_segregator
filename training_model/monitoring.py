@@ -4,19 +4,15 @@ import tensorflow as tf
 import serial
 import time
 
-# Initialize serial connection to Arduino
-arduino = serial.Serial('COM3', 11600)  # Replace with your Arduino port
-time.sleep(2)  # Allow connection to establish
+arduino = serial.Serial('COM3', 11600)
+time.sleep(2)
 
-# Load TFLite model
-interpreter = tf.lite.Interpreter(model_path='C:\\Users\\Ramesh\\Desktop\\c\\projects\\waste_segregation\\training_model\\trained\\waste_classifier_quantized.tflite')
+interpreter = tf.lite.Interpreter(model_path='x')
 interpreter.allocate_tensors()
 
-# Get model I/O details
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
-# Alphabetically sorted class labels (MUST match training order!)
 class_labels = [
     'aerosol_cans',
     'aluminum_food_cans',
@@ -50,7 +46,6 @@ class_labels = [
     'tea_bags'
 ]
 
-# Material-based angle mapping (0-180°)
 ANGLE_MAPPING = {
     # Plastics (30°)
     'plastic_water_bottles': 30,
@@ -95,7 +90,6 @@ ANGLE_MAPPING = {
     'styrofoam_food_containers': 180
 }
 
-# Initialize webcam
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
@@ -105,28 +99,23 @@ while True:
     if not ret:
         break
 
-    # Preprocess frame
     resized_frame = cv2.resize(frame, (224, 224))
     normalized_frame = resized_frame / 255.0
     input_data = np.expand_dims(normalized_frame, axis=0).astype(np.float32)
 
-    # Run inference
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
     predictions = interpreter.get_tensor(output_details[0]['index'])
     
-    # Get predicted class
     class_idx = np.argmax(predictions)
     detected_class = class_labels[class_idx]
     confidence = np.max(predictions) * 100
 
-    # Only act on high-confidence predictions
     if confidence > 75:
-        angle = ANGLE_MAPPING.get(detected_class, 180)  # Default to 180°
+        angle = ANGLE_MAPPING.get(detected_class, 180)
         arduino.write(f"{angle}\n".encode())
         print(f"Detected: {detected_class} -> Angle: {angle}°")
 
-    # Display info
     cv2.putText(frame, 
                 f"{detected_class} ({confidence:.1f}%)", 
                 (10, 30),

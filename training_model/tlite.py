@@ -5,12 +5,10 @@ from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.models import Model
 import matplotlib.pyplot as plt
 
-# Data configuration
 dataset_dir = "dataset"
 img_size = (224, 224)
 batch_size = 32
 
-# Enhanced data augmentation
 train_datagen = ImageDataGenerator(
     rescale=1./255,
     validation_split=0.2,
@@ -24,7 +22,6 @@ train_datagen = ImageDataGenerator(
     fill_mode='nearest'
 )
 
-# Load dataset
 train_data = train_datagen.flow_from_directory(
     dataset_dir,
     target_size=img_size,
@@ -42,7 +39,6 @@ val_data = train_datagen.flow_from_directory(
     subset='validation'
 )
 
-# Model architecture (EfficientNet for better performance with many classes)
 base_model = EfficientNetB0(
     input_shape=(224, 224, 3),
     include_top=False,
@@ -65,7 +61,6 @@ model.compile(
     metrics=['accuracy']
 )
 
-# Training with checkpoints
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
     'best_model.h5',
     monitor='val_accuracy',
@@ -87,7 +82,6 @@ history = model.fit(
     ]
 )
 
-# Convert to TFLite with quantization
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
 converter.optimizations = [tf.lite.Optimize.DEFAULT]
 tflite_model = converter.convert()
